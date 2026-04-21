@@ -46,3 +46,30 @@ def add_to_watchlist(user_id, movie_id, title, genre, year, poster_url):
     conn.commit()
     cur.close()
     conn.close()
+
+def get_watchlist(user_id):
+
+    conn = psycopg2.connect(db_url)
+
+    cur = conn.cursor()
+
+    cur.execute("SELECT m.title, m.year, m.genre FROM movie m JOIN watchlist w ON w.w_movieid = m.movie_id WHERE w.w_userid = %s;", (user_id,))
+    
+    rows = cur.fetchall()
+
+    results = []
+    for tuple in rows:
+
+        record = {
+            "title": tuple[0],
+            "year": tuple[1],
+            "genre": tuple[2]
+        }
+
+        results.append(record)
+    
+
+    cur.close()
+    conn.close()
+
+    return results

@@ -1,4 +1,5 @@
 import requests
+import json
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -20,7 +21,12 @@ def search_movies(query: str):
 
     api_key = os.getenv("OMDB_API")
     params = {"s": query, "apikey": api_key}
+
     response = requests.get("http://www.omdbapi.com/", params=params)
+
+    print(f"API key: {api_key}")
+    print(f"Status: {response.status_code}")
+    print(f"Body: {response.json()}")
 
     if response.status_code == 200:
         
@@ -30,7 +36,7 @@ def search_movies(query: str):
         for movie in r["Search"]:
             new_response = {"title": movie["Title"],
                             "year": movie["Year"],
-                            "genre": movie["Genre"],
+                            "genre": "N/A",
                             "poster": movie["Poster"],
                             "imdbID": movie["imdbID"]}
             
@@ -38,17 +44,32 @@ def search_movies(query: str):
 
         return movies
     else:
+
+        print(f"Status: {response.status_code}")
+        print(f"Body: {response.json()}")
         raise ValueError(f"Could not search for movies with query: {query}")
+        
     
 
-def add_to_watchlist(user_id: int, movie: Movie):
+def add_to_watchlist(user_id: int, imdbID: str):
+
+    api_key = os.environ["OMDB_API"]
+
+    response = requests.get(f"https://www.omdbapi.com/?i={imdbID}&apikey={api_key}")
+
+    if response.status_code == 200:
+        print(f"Successfully got movie details for user: {user_id}")
+    else:
+        raise ValueError(f"Response status code -> {response.status_code}")
+
+    data = response.json()
 
     try:
-        db_add_to_watchlist(user_id, movie.imdbID, movie.title, movie.genre, movie.year, movie.poster)
-        
-        return {"success": f"Added {movie} to {user_id}'s watch list"}
+        db_add_to_watchlist(user_id, imdbID, data["Title"], data["Genre"], data["Year"], data["Poster"])
+        title = data["Title"]
+        return {"success": f"Added {title} to {user_id}'s watch list"}
     except psycopg2.Error as e:
-        return {"error": e} 
+        return {"error": str(e)} 
 
 def get_watchlist(user_id: int):
 

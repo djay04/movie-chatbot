@@ -14,7 +14,7 @@ def init_db():
 
     cur.execute("CREATE TABLE IF NOT EXISTS users (user_id serial PRIMARY KEY, email varchar, password varchar);")
 
-    cur.execute("CREATE TABLE IF NOT EXISTS movie (movie_id serial PRIMARY KEY, title varchar, poster_url varchar, year varchar, genre varchar);")
+    cur.execute("CREATE TABLE IF NOT EXISTS movie (movie_id varchar PRIMARY KEY, title varchar, poster_url varchar, year varchar, genre varchar);")
 
     conn.commit()
 
@@ -24,7 +24,7 @@ def init_db():
     except psycopg2.errors.DuplicateObject:
         conn.rollback()
 
-    cur.execute("CREATE TABLE IF NOT EXISTS watchlist (watchlist serial PRIMARY KEY, w_userid integer REFERENCES users(user_id), w_movieid integer REFERENCES movie(movie_id), movie_status status);")
+    cur.execute("CREATE TABLE IF NOT EXISTS watchlist (watchlist serial PRIMARY KEY, w_userid integer REFERENCES users(user_id), w_movieid varchar REFERENCES movie(movie_id), movie_status status);")
 
     conn.commit()
     cur.close()
@@ -36,13 +36,13 @@ def add_to_watchlist(user_id, movie_id, title, genre, year, poster_url):
 
     cur = conn.cursor()
 
+    print(f"Inserting movie: {movie_id}, {title}")
     cur.execute("INSERT INTO movie (movie_id, title, poster_url, year, genre) VALUES (%s,%s,%s,%s,%s)  ON CONFLICT (movie_id) DO NOTHING;", 
                 (movie_id, title, poster_url, year, genre))
-
-
+    print(f"Movie Inserted")
     cur.execute("INSERT INTO watchlist (w_userid, w_movieid, movie_status) VALUES (%s, %s, %s);",
-                (user_id, movie_id, "Not started yet"))
-    
+                (user_id, movie_id, "not started yet"))
+    print(f"Watchlist inserted")
     conn.commit()
     cur.close()
     conn.close()

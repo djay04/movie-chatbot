@@ -73,3 +73,35 @@ def get_watchlist(user_id):
     conn.close()
 
     return results
+
+def create_user(email, hash):
+
+    conn = psycopg2.connect(db_url)
+
+    cur = conn.cursor()
+
+    cur.execute("INSERT INTO users (email, password) VALUES (%s, %s) RETURNING user_id", (email, hash))
+
+    user_id = cur.fetchone()[0]
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return user_id
+
+def get_user_by_email(email):
+
+    conn = psycopg2.connect(db_url)
+
+    cur = conn.cursor()
+
+    cur.execute("SELECT user_id, password FROM users WHERE email = %s", (email,))
+
+    user_id, password = cur.fetchone()
+
+    conn.close()
+    cur.close()
+
+    return user_id, password
